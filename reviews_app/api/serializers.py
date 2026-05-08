@@ -1,6 +1,8 @@
 from rest_framework import serializers
 
 from reviews_app.models import Review
+from profiles_app.models import UserProfile
+
 
 class ReviewSerializer(serializers.ModelSerializer):
     class Meta:
@@ -15,10 +17,15 @@ class ReviewSerializer(serializers.ModelSerializer):
             'updated_at'
         ]
 
-        read_only_fields = ["id", "reviewer", "created_at", "updated_at"]
+        read_only_fields = [
+            "id",
+            "reviewer",
+            "created_at",
+            "updated_at"
+        ]
+
 
 class ReviewCreateSerializer(serializers.ModelSerializer):
-    BUSINESS_PROFILE_TYPE = "business"
     BUSINESS_USER_VALIDATION_ERROR = "You can only create reviews for businesses."
     DUPLICATE_REVIEW_ERROR = "You have already reviewed this business."
 
@@ -32,34 +39,29 @@ class ReviewCreateSerializer(serializers.ModelSerializer):
 
     def validate_business_user(self, value):
         profile_type = value.profile.type
-        if profile_type != self.BUSINESS_PROFILE_TYPE:
+        if profile_type != UserProfile.BUSINESS:
             raise serializers.ValidationError(self.BUSINESS_USER_VALIDATION_ERROR)
         return value
 
-    def create(self, validated_data):
-        business_user = validated_data["business_user"]
+    def validate(self, attrs):
+        business_user = attrs["business_user"]
         reviewer = self.context["request"].user
-        if self.review_exists_for_business_user(business_user, reviewer):
-            raise serializers.ValidationError(self.DUPLICATE_REVIEW_ERROR)
-        return Review.objects.create(
-            business_user=business_user,
-            reviewer=reviewer,
-            **validated_data,
-        )
 
-    def review_exists_for_business_user(self, business_user, reviewer):
-        return Review.objects.filter(
-            business_user=business_user,
-            reviewer=reviewer
-        ).exists()
+        if Review.objects.filter(
+                business_user=business_user,
+                reviewer=reviewer,
+        ).exists():
+            raise serializers.ValidationError(
+                {"detail": self.DUPLICATE_REVIEW_ERROR}
+            )
 
-class ReviewUpdateSerializer(ReviewCreateSerializer):
+        return attrs
+
+
+class ReviewUpdateSerializer(serializers.ModelSerializer):
     class Meta:
+        model = Review
         fields = [
             "rating",
             "description"
         ]
-
-    def update(self, instance, validated_data):
-        validated_data.pop("business_user", None)
-        return super().update(instance, validated_data)
