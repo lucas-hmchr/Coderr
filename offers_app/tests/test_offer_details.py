@@ -38,29 +38,6 @@ class OfferUpdateDeleteTests(OfferTestMixin, APITestCase):
         self.assertEqual(float(basic_detail.price), 120.0)
         self.assertEqual(basic_detail.delivery_time_in_days, 4)
 
-    def test_single_detail_patch_fails_with_current_serializer(self):
-        self.client.force_authenticate(user=self.business)
-        payload = {
-            "details": [
-                {
-                    "title": "Only Basic Updated",
-                    "revisions": 3,
-                    "delivery_time_in_days": 4,
-                    "price": 120.0,
-                    "features": ["Only one updated feature"],
-                    "offer_type": "basic",
-                }
-            ]
-        }
-
-        response = self.client.patch(
-            self.offer_url(self.offer),
-            payload,
-            format="json",
-        )
-
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-
     def test_other_business_user_cannot_patch_offer(self):
         self.client.force_authenticate(user=self.other_business)
         payload = {"title": "Hacked Offer"}

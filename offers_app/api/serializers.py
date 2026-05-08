@@ -16,6 +16,13 @@ class OfferDetailSerializer(serializers.ModelSerializer):
             "offer_type",
         ]
         read_only_fields = ["id"]
+        extra_kwargs = {
+            "title": {"required": False},
+            "revisions": {"required": False},
+            "delivery_time_in_days": {"required": False},
+            "price": {"required": False},
+            "features": {"required": False},
+        }
 
 
 class OfferDetailLinkSerializer(serializers.ModelSerializer):
@@ -53,10 +60,13 @@ class OfferListSerializer(serializers.ModelSerializer):
 
     def get_min_price(self, obj):
         prices = [detail.price for detail in obj.details.all()]
-        return min(prices) if prices else None
+        price = min(prices) if prices else None
+
+        return float(price) if price is not None else None
 
     def get_min_delivery_time(self, obj):
         times = [detail.delivery_time_in_days for detail in obj.details.all()]
+
         return min(times) if times else None
 
     def get_user_details(self, obj):
@@ -82,18 +92,56 @@ class OfferSerializer(serializers.ModelSerializer):
         read_only_fields = ["id"]
 
     def validate_details(self, value):
-        required_types = {"basic", "standard", "premium"}
-        given_types = {detail["offer_type"] for detail in value}
+        if self.instance:
+            self.validate_update_details(value)
+        else:
+            self.validate_create_details(value)
 
-        if len(value) != 3:
-            raise serializers.ValidationError("Exactly three details are required.")
+        return value
+
+    def validate_create_details(self, details):
+        required_types = {
+            OfferDetail.BASIC,
+            OfferDetail.STANDARD,
+            OfferDetail.PREMIUM,
+        }
+        given_types = {detail["offer_type"] for detail in details}
+
+        if len(details) != 3:
+            raise serializers.ValidationError(
+                "Exactly three details are required."
+            )
 
         if given_types != required_types:
             raise serializers.ValidationError(
                 "Details must include basic, standard and premium."
             )
 
-        return value
+    def validate_update_details(self, details):
+        given_types = [detail.get("offer_type") for detail in details]
+
+        if None in given_types:
+            raise serializers.ValidationError(
+                "Each detail update requires an offer_type."
+            )
+
+        if len(given_types) != len(set(given_types)):
+            raise serializers.ValidationError(
+                "Each offer_type can only be updated once."
+            )
+
+        self.validate_existing_detail_types(given_types)
+
+    def validate_existing_detail_types(self, given_types):
+        existing_types = set(
+            self.instance.details.values_list("offer_type", flat=True)
+        )
+
+        for offer_type in given_types:
+            if offer_type not in existing_types:
+                raise serializers.ValidationError(
+                    f"No detail exists for offer_type '{offer_type}'."
+                )
 
     def create(self, validated_data):
         details_data = validated_data.pop("details")
@@ -107,7 +155,6 @@ class OfferSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         details_data = validated_data.pop("details", None)
-
         offer = super().update(instance, validated_data)
 
         if details_data is not None:
@@ -123,11 +170,13 @@ class OfferSerializer(serializers.ModelSerializer):
         for detail_data in details_data:
             offer_type = detail_data.pop("offer_type")
             detail = offer.details.get(offer_type=offer_type)
+            self.update_detail(detail, detail_data)
 
-            for field, value in detail_data.items():
-                setattr(detail, field, value)
+    def update_detail(self, detail, detail_data):
+        for field, value in detail_data.items():
+            setattr(detail, field, value)
 
-            detail.save()
+        detail.save()
 
 
 class OfferDetailRetrieveSerializer(serializers.ModelSerializer):
