@@ -1,5 +1,6 @@
-from rest_framework import viewsets, filters
+from rest_framework import viewsets, status
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
 
 from reviews_app.models import Review
 from reviews_app.api.serializers import (
@@ -9,8 +10,8 @@ from reviews_app.api.serializers import (
 )
 from reviews_app.api.permissions import IsCustomerUser, IsReviewOwner
 
-class ReviewViewSet(viewsets.ModelViewSet):
 
+class ReviewViewSet(viewsets.ModelViewSet):
     ordering_fields = [
         "rating",
         "updated_at"
@@ -41,9 +42,21 @@ class ReviewViewSet(viewsets.ModelViewSet):
         if self.action == "create":
             return [IsAuthenticated(), IsCustomerUser()]
         if self.action in ["update", "partial_update", "destroy"]:
-            return [IsAuthenticated(),IsReviewOwner()]
+            return [IsAuthenticated(), IsReviewOwner()]
         return [IsAuthenticated()]
 
     def perform_create(self, serializer):
         reviewer = self.request.user
         serializer.save(reviewer=reviewer)
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+
+        response_serializer = ReviewSerializer(serializer.instance)
+
+        return Response(
+            response_serializer.data,
+            status=status.HTTP_201_CREATED,
+        )
