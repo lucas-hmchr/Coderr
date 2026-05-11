@@ -111,20 +111,22 @@ class ProfileListTests(APITestCase):
         url = reverse("business-profile-list")
 
         response = self.client.get(url)
+        results = response.data["results"]
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 1)
-        self.assertEqual(response.data[0]["type"], UserProfile.BUSINESS)
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0]["type"], UserProfile.BUSINESS)
 
     def test_authenticated_user_can_get_customer_profiles(self):
         self.client.force_authenticate(user=self.business)
         url = reverse("customer-profile-list")
 
         response = self.client.get(url)
+        results = response.data["results"]
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 1)
-        self.assertEqual(response.data[0]["type"], UserProfile.CUSTOMER)
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0]["type"], UserProfile.CUSTOMER)
 
     def test_anonymous_user_cannot_get_business_profiles(self):
         url = reverse("business-profile-list")
