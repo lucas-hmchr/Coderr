@@ -5,6 +5,7 @@ from profiles_app.models import UserProfile
 
 
 class ReviewSerializer(serializers.ModelSerializer):
+    """Serializer for displaying reviews."""
     class Meta:
         model = Review
         fields = [
@@ -26,6 +27,7 @@ class ReviewSerializer(serializers.ModelSerializer):
 
 
 class ReviewCreateSerializer(serializers.ModelSerializer):
+    """Serializer for creating a new review."""
     BUSINESS_USER_VALIDATION_ERROR = "You can only create reviews for businesses."
     DUPLICATE_REVIEW_ERROR = "You have already reviewed this business."
 

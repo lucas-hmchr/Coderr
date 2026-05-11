@@ -2,6 +2,7 @@ from django.db import models
 from django.conf import settings
 
 class Offer(models.Model):
+    """Represents a service offer."""
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="offers")
     title = models.CharField(max_length=255)
     image = models.FileField(upload_to="offers/", blank=True, null=True)
@@ -19,6 +20,7 @@ class Offer(models.Model):
 
 
 class OfferDetail(models.Model):
+    """Details (packages) of a service offer."""
     BASIC = "basic"
     STANDARD = "standard"
     PREMIUM = "premium"

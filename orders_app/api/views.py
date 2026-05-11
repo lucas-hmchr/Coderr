@@ -17,10 +17,12 @@ from .serializers import (
 
 
 class OrderListCreateView(generics.ListCreateAPIView):
+    """View for listing and creating orders."""
     pagination_class = None
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
+        """Returns orders for the current user."""
         user = self.request.user
 
         return Order.objects.select_related(
@@ -31,12 +33,14 @@ class OrderListCreateView(generics.ListCreateAPIView):
         )
 
     def get_serializer_class(self):
+        """Selects serializer for creation or display."""
         if self.request.method == "POST":
             return OrderCreateSerializer
 
         return OrderSerializer
 
     def get_permissions(self):
+        """Sets permissions based on method."""
         permissions = [IsAuthenticated()]
 
         if self.request.method == "POST":
@@ -45,6 +49,7 @@ class OrderListCreateView(generics.ListCreateAPIView):
         return permissions
 
     def create(self, request, *args, **kwargs):
+        """Creates a new order."""
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
@@ -55,6 +60,7 @@ class OrderListCreateView(generics.ListCreateAPIView):
 
 
 class OrderUpdateDeleteView(generics.GenericAPIView):
+    """View for updating (status) or deleting orders."""
     queryset = Order.objects.select_related("customer_user", "business_user")
     serializer_class = OrderStatusUpdateSerializer
 
@@ -68,6 +74,7 @@ class OrderUpdateDeleteView(generics.GenericAPIView):
         return [IsAuthenticated()]
 
     def patch(self, request, *args, **kwargs):
+        """Updates the status of an order."""
         order = self.get_object()
         serializer = self.get_serializer(
             order,
@@ -80,6 +87,7 @@ class OrderUpdateDeleteView(generics.GenericAPIView):
         return Response(OrderSerializer(order).data, status=status.HTTP_200_OK)
 
     def delete(self, request, *args, **kwargs):
+        """Deletes an order."""
         order = self.get_object()
         order.delete()
 
@@ -87,17 +95,20 @@ class OrderUpdateDeleteView(generics.GenericAPIView):
 
 
 class BusinessOrderCountView(APIView):
+    """Base view for counting orders of a business user."""
     permission_classes = [IsAuthenticated]
     status_filter = Order.IN_PROGRESS
     response_key = "order_count"
 
     def get(self, request, business_user_id):
+        """Returns the number of orders."""
         self.validate_business_user(business_user_id)
         count = self.get_order_count(business_user_id)
 
         return Response({self.response_key: count}, status=status.HTTP_200_OK)
 
     def validate_business_user(self, business_user_id):
+        """Checks if the business user exists."""
         exists = UserProfile.objects.filter(
             user_id=business_user_id,
             type=UserProfile.BUSINESS,
@@ -107,6 +118,7 @@ class BusinessOrderCountView(APIView):
             raise NotFound("Business user not found.")
 
     def get_order_count(self, business_user_id):
+        """Calculates the number of orders by status."""
         return Order.objects.filter(
             business_user_id=business_user_id,
             status=self.status_filter,
@@ -114,5 +126,6 @@ class BusinessOrderCountView(APIView):
 
 
 class CompletedOrderCountView(BusinessOrderCountView):
+    """Specialized view for completed orders."""
     status_filter = Order.COMPLETED
     response_key = "completed_order_count"

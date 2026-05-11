@@ -5,6 +5,7 @@ from profiles_app.models import UserProfile
 
 
 class RegistrationSerializer(serializers.ModelSerializer):
+    """Serializer for user registration."""
     repeated_password = serializers.CharField(write_only=True)
     type = serializers.ChoiceField(
         choices=UserProfile.USER_TYPE_CHOICES,
@@ -25,6 +26,7 @@ class RegistrationSerializer(serializers.ModelSerializer):
         }
 
     def validate(self, attrs):
+        """Validates that passwords match."""
         if attrs["password"] != attrs["repeated_password"]:
             raise serializers.ValidationError(
                 {"password": "Passwords do not match."}
@@ -32,6 +34,7 @@ class RegistrationSerializer(serializers.ModelSerializer):
         return attrs
 
     def create(self, validated_data):
+        """Creates a new user and corresponding profile."""
         user_type = validated_data.pop("type")
         validated_data.pop("repeated_password")
 

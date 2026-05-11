@@ -9,6 +9,7 @@ from .serializers import RegistrationSerializer
 
 
 def build_auth_response(user):
+    """Creates the authentication response with token and user data."""
     token, _ = Token.objects.get_or_create(user=user)
 
     return {
@@ -20,9 +21,11 @@ def build_auth_response(user):
 
 
 class RegistrationView(APIView):
+    """Endpoint for new user registration."""
     permission_classes = [AllowAny]
 
     def post(self, request):
+        """Processes registration and returns a token."""
         serializer = RegistrationSerializer(data=request.data)
 
         if serializer.is_valid():
@@ -36,9 +39,11 @@ class RegistrationView(APIView):
 
 
 class LoginView(APIView):
+    """Endpoint for user login."""
     permission_classes = [AllowAny]
 
     def post(self, request):
+        """Authenticates user and returns a token."""
         user = authenticate(
             username=request.data.get("username"),
             password=request.data.get("password"),

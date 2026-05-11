@@ -4,6 +4,7 @@ from profiles_app.models import UserProfile
 
 
 class IsCustomerUser(BasePermission):
+    """Allows access only for customer users."""
     def has_permission(self, request, view):
         return (
             request.user.is_authenticated
@@ -13,6 +14,7 @@ class IsCustomerUser(BasePermission):
 
 
 class IsReviewOwner(BasePermission):
+    """Allows access only for the review owner."""
     def has_object_permission(self, request, view, obj):
         return (
             request.user.is_authenticated

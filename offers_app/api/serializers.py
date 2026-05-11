@@ -37,6 +37,7 @@ class OfferDetailLinkSerializer(serializers.ModelSerializer):
 
 
 class OfferListSerializer(serializers.ModelSerializer):
+    """Serializer for the list view of offers."""
     details = OfferDetailLinkSerializer(many=True, read_only=True)
     min_price = serializers.SerializerMethodField()
     min_delivery_time = serializers.SerializerMethodField()
@@ -78,6 +79,7 @@ class OfferListSerializer(serializers.ModelSerializer):
 
 
 class OfferSerializer(serializers.ModelSerializer):
+    """Main serializer for offers including details."""
     details = OfferDetailSerializer(many=True)
 
     class Meta:

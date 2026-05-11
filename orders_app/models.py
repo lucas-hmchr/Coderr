@@ -3,6 +3,7 @@ from django.db import models
 
 
 class Order(models.Model):
+    """Represents an order for an offer."""
     IN_PROGRESS = "in_progress"
     COMPLETED = "completed"
     CANCELLED = "cancelled"

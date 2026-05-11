@@ -8,6 +8,7 @@ from reviews_app.models import Review
 from profiles_app.models import UserProfile
 
 class BaseInfoView(APIView):
+    """Provides general platform statistics."""
     permission_classes = [AllowAny]
 
     def get(self, request):

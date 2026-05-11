@@ -6,6 +6,7 @@ from orders_app.models import Order
 
 
 class OrderSerializer(serializers.ModelSerializer):
+    """Serializer for detailed display of an order."""
     price = serializers.DecimalField(
         max_digits=10,
         decimal_places=2,
@@ -45,6 +46,7 @@ class OrderSerializer(serializers.ModelSerializer):
 
 
 class OrderCreateSerializer(serializers.Serializer):
+    """Serializer for creating an order from an offer detail."""
     offer_detail_id = serializers.IntegerField()
 
     def validate_offer_detail_id(self, value):

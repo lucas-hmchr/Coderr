@@ -3,6 +3,7 @@ from django.db import models
 
 
 class UserProfile(models.Model):
+    """Represents a user's profile (customer or business)."""
     CUSTOMER = "customer"
     BUSINESS = "business"
 

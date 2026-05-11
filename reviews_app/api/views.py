@@ -12,6 +12,7 @@ from reviews_app.api.permissions import IsCustomerUser, IsReviewOwner
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
+    """ViewSet for managing reviews."""
     ordering_fields = [
         "rating",
         "updated_at"
@@ -22,6 +23,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
     serializer_class = ReviewSerializer
 
     def get_queryset(self):
+        """Returns reviews filtered by business user or reviewer."""
         queryset = Review.objects.select_related("business_user", "reviewer")
         business_user_id = self.request.query_params.get("business_user_id")
         reviewer_id = self.request.query_params.get("reviewer_id")
@@ -32,6 +34,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
         return queryset
 
     def get_serializer_class(self):
+        """Selects serializer based on action (create, update, etc.)."""
         if self.action == "create":
             return ReviewCreateSerializer
         if self.action in ["update", "partial_update"]:
@@ -39,6 +42,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
         return ReviewSerializer
 
     def get_permissions(self):
+        """Sets permissions based on action."""
         if self.action == "create":
             return [IsAuthenticated(), IsCustomerUser()]
         if self.action in ["update", "partial_update", "destroy"]:
@@ -46,10 +50,12 @@ class ReviewViewSet(viewsets.ModelViewSet):
         return [IsAuthenticated()]
 
     def perform_create(self, serializer):
+        """Saves the current user as reviewer."""
         reviewer = self.request.user
         serializer.save(reviewer=reviewer)
 
     def create(self, request, *args, **kwargs):
+        """Creates a new review."""
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)

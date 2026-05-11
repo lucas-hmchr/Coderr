@@ -13,6 +13,7 @@ from .serializers import (
 
 
 class OfferViewSet(viewsets.ModelViewSet):
+    """ViewSet for managing offers."""
     permission_classes = [
         IsAuthenticated,
         IsBusinessUserOrReadOnly,
@@ -32,6 +33,7 @@ class OfferViewSet(viewsets.ModelViewSet):
     ]
 
     def get_queryset(self):
+        """Returns filtered offers."""
         queryset = self.get_base_queryset()
         queryset = self.filter_by_creator(queryset)
         queryset = self.filter_by_min_price(queryset)
@@ -40,6 +42,7 @@ class OfferViewSet(viewsets.ModelViewSet):
         return queryset.distinct()
 
     def get_base_queryset(self):
+        """Creates the base queryset with optimized queries."""
         return Offer.objects.select_related("user").prefetch_related(
             "details",
         ).annotate(
@@ -48,6 +51,7 @@ class OfferViewSet(viewsets.ModelViewSet):
         )
 
     def filter_by_creator(self, queryset):
+        """Filters offers by creator."""
         creator_id = self.request.query_params.get("creator_id")
 
         if creator_id:
@@ -56,6 +60,7 @@ class OfferViewSet(viewsets.ModelViewSet):
         return queryset
 
     def filter_by_min_price(self, queryset):
+        """Filters offers by minimum price."""
         min_price = self.request.query_params.get("min_price")
 
         if min_price:
@@ -64,6 +69,7 @@ class OfferViewSet(viewsets.ModelViewSet):
         return queryset
 
     def filter_by_delivery_time(self, queryset):
+        """Filters offers by maximum delivery time."""
         max_delivery_time = self.request.query_params.get("max_delivery_time")
 
         if max_delivery_time:
@@ -72,6 +78,7 @@ class OfferViewSet(viewsets.ModelViewSet):
         return queryset
 
     def get_serializer_class(self):
+        """Selects serializer based on action."""
         if self.action in ["list", "retrieve"]:
             return OfferListSerializer
 
@@ -79,6 +86,7 @@ class OfferViewSet(viewsets.ModelViewSet):
 
 
 class OfferDetailRetrieveView(generics.RetrieveAPIView):
+    """Detail view for a single offer detail."""
     queryset = OfferDetail.objects.all()
     serializer_class = OfferDetailRetrieveSerializer
     permission_classes = [IsAuthenticated]

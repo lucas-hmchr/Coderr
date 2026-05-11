@@ -5,6 +5,7 @@ from profiles_app.models import UserProfile
 
 
 class ProfileSerializer(serializers.ModelSerializer):
+    """Serializer for viewing and updating user profiles."""
     user = serializers.IntegerField(source="user.id", read_only=True)
     username = serializers.CharField(source="user.username", read_only=True)
     first_name = serializers.CharField(source="user.first_name", required=False)
