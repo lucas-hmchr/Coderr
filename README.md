@@ -19,7 +19,7 @@ The API allows customers and business users to register, manage profiles, publis
 
 ## Tech Stack
 
-- Python
+- Python >3.12
 - Django 6.0.4
 - Django REST Framework 3.17.1
 - SQLite for local development
