@@ -74,6 +74,7 @@ class OrderCreateSerializer(serializers.Serializer):
 
 
 class OrderStatusUpdateSerializer(serializers.ModelSerializer):
+    """Serializer for updating the status of an order."""
     class Meta:
         model = Order
         fields = ["status"]

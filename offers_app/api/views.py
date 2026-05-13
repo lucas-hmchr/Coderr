@@ -38,7 +38,7 @@ class OfferViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         if self.action in ["list"]:
             return [AllowAny()]
-        return self.permission_classes
+        return [permission() for permission in self.permission_classes]
 
     def get_queryset(self):
         """Returns filtered offers."""

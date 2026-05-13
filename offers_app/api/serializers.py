@@ -4,6 +4,7 @@ from offers_app.models import Offer, OfferDetail
 
 
 class OfferDetailSerializer(serializers.ModelSerializer):
+    """Serializer for the OfferDetail model. Used for creating and updating offer details."""
     class Meta:
         model = OfferDetail
         fields = [
@@ -26,6 +27,7 @@ class OfferDetailSerializer(serializers.ModelSerializer):
 
 
 class OfferDetailLinkSerializer(serializers.ModelSerializer):
+    """Serializer for providing a link to an OfferDetail."""
     url = serializers.SerializerMethodField()
 
     class Meta:
@@ -37,7 +39,7 @@ class OfferDetailLinkSerializer(serializers.ModelSerializer):
 
 
 class OfferListSerializer(serializers.ModelSerializer):
-    """Serializer for the list view of offers."""
+    """Serializer for the list view of offers. Includes nested detail links and aggregated info."""
     details = OfferDetailLinkSerializer(many=True, read_only=True)
     min_price = serializers.SerializerMethodField()
     min_delivery_time = serializers.SerializerMethodField()
@@ -79,7 +81,7 @@ class OfferListSerializer(serializers.ModelSerializer):
 
 
 class OfferSerializer(serializers.ModelSerializer):
-    """Main serializer for offers including details."""
+    """Main serializer for creating and updating offers, including nested details."""
     details = OfferDetailSerializer(many=True)
 
     class Meta:
@@ -94,6 +96,10 @@ class OfferSerializer(serializers.ModelSerializer):
         read_only_fields = ["id"]
 
     def validate_details(self, value):
+        """
+        Validates the details data for the offer.
+        Dispatches to either create or update validation based on whether the instance exists.
+        """
         if self.instance:
             self.validate_update_details(value)
         else:
@@ -102,6 +108,10 @@ class OfferSerializer(serializers.ModelSerializer):
         return value
 
     def validate_create_details(self, details):
+        """
+        Validates that exactly three details are provided (basic, standard, premium)
+        when creating a new offer.
+        """
         required_types = {
             OfferDetail.BASIC,
             OfferDetail.STANDARD,
@@ -120,6 +130,10 @@ class OfferSerializer(serializers.ModelSerializer):
             )
 
     def validate_update_details(self, details):
+        """
+        Validates the details data for an update.
+        Ensures each detail has a type, types are unique, and they exist on the instance.
+        """
         given_types = [detail.get("offer_type") for detail in details]
 
         if None in given_types:
@@ -135,6 +149,9 @@ class OfferSerializer(serializers.ModelSerializer):
         self.validate_existing_detail_types(given_types)
 
     def validate_existing_detail_types(self, given_types):
+        """
+        Checks if the provided offer types already exist for the current offer instance.
+        """
         existing_types = set(
             self.instance.details.values_list("offer_type", flat=True)
         )
@@ -146,6 +163,10 @@ class OfferSerializer(serializers.ModelSerializer):
                 )
 
     def create(self, validated_data):
+        """
+        Creates a new offer and its associated details.
+        The user is taken from the request context.
+        """
         details_data = validated_data.pop("details")
         offer = Offer.objects.create(
             user=self.context["request"].user,
@@ -156,6 +177,9 @@ class OfferSerializer(serializers.ModelSerializer):
         return offer
 
     def update(self, instance, validated_data):
+        """
+        Updates an existing offer and its details if provided.
+        """
         details_data = validated_data.pop("details", None)
         offer = super().update(instance, validated_data)
 
@@ -165,16 +189,26 @@ class OfferSerializer(serializers.ModelSerializer):
         return offer
 
     def create_details(self, offer, details_data):
+        """
+        Helper method to create multiple OfferDetail objects for a given offer.
+        """
         for detail_data in details_data:
             OfferDetail.objects.create(offer=offer, **detail_data)
 
     def update_details(self, offer, details_data):
+        """
+        Helper method to update multiple existing OfferDetail objects.
+        Uses offer_type to identify which detail to update.
+        """
         for detail_data in details_data:
             offer_type = detail_data.pop("offer_type")
             detail = offer.details.get(offer_type=offer_type)
             self.update_detail(detail, detail_data)
 
     def update_detail(self, detail, detail_data):
+        """
+        Helper method to update fields of a single OfferDetail instance.
+        """
         for field, value in detail_data.items():
             setattr(detail, field, value)
 
@@ -182,6 +216,7 @@ class OfferSerializer(serializers.ModelSerializer):
 
 
 class OfferRetrieveSerializer(serializers.ModelSerializer):
+    """Serializer for the detailed retrieval of an offer. Includes nested detail links."""
     details = OfferDetailLinkSerializer(many=True, read_only=True)
     min_price = serializers.SerializerMethodField()
     min_delivery_time = serializers.SerializerMethodField()
@@ -213,6 +248,7 @@ class OfferRetrieveSerializer(serializers.ModelSerializer):
         return min(times) if times else None
 
 class OfferDetailRetrieveSerializer(serializers.ModelSerializer):
+    """Serializer for the detailed retrieval of an individual OfferDetail."""
     class Meta:
         model = OfferDetail
         fields = [

@@ -62,6 +62,7 @@ class ReviewCreateSerializer(serializers.ModelSerializer):
 
 
 class ReviewUpdateSerializer(serializers.ModelSerializer):
+    """Serializer for updating an existing review."""
     ALLOWED_UPDATE_FIELDS = {"rating", "description"}
 
     class Meta:
