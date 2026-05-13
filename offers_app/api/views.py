@@ -1,6 +1,6 @@
 from django.db.models import Min
 from rest_framework import filters, generics, viewsets
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 
 from offers_app.models import Offer, OfferDetail
 
@@ -9,7 +9,9 @@ from .serializers import (
     OfferDetailRetrieveSerializer,
     OfferListSerializer,
     OfferSerializer,
+    OfferRetrieveSerializer
 )
+from .pagination import OfferPagination
 
 
 class OfferViewSet(viewsets.ModelViewSet):
@@ -31,6 +33,12 @@ class OfferViewSet(viewsets.ModelViewSet):
         "updated_at",
         "min_price",
     ]
+    pagination_class = OfferPagination
+
+    def get_permissions(self):
+        if self.action in ["list"]:
+            return [AllowAny()]
+        return self.permission_classes
 
     def get_queryset(self):
         """Returns filtered offers."""
@@ -79,8 +87,11 @@ class OfferViewSet(viewsets.ModelViewSet):
 
     def get_serializer_class(self):
         """Selects serializer based on action."""
-        if self.action in ["list", "retrieve"]:
+        if self.action in ["list"]:
             return OfferListSerializer
+
+        if self.action == "retrieve":
+            return OfferRetrieveSerializer
 
         return OfferSerializer
 

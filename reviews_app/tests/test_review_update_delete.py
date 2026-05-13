@@ -86,7 +86,7 @@ class ReviewUpdateTests(ReviewTestMixin, APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
-    def test_update_review_ignores_business_user_change(self):
+    def test_update_review_rejects_business_user_change(self):
         self.client.force_authenticate(user=self.customer)
         payload = {
             "business_user": self.other_business.id,
@@ -100,7 +100,7 @@ class ReviewUpdateTests(ReviewTestMixin, APITestCase):
         )
         self.review.refresh_from_db()
 
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(self.review.business_user, self.business)
 
 

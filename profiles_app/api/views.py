@@ -4,7 +4,7 @@ from rest_framework.permissions import IsAuthenticated
 from profiles_app.models import UserProfile
 
 from .permissions import IsProfileOwnerOrReadOnly
-from .serializers import ProfileSerializer
+from .serializers import ProfileSerializer, ProfileListSerializer
 
 
 class ProfileDetailView(generics.RetrieveUpdateAPIView):
@@ -16,7 +16,7 @@ class ProfileDetailView(generics.RetrieveUpdateAPIView):
 
 class BusinessProfileListView(generics.ListAPIView):
     """List of all business profiles."""
-    serializer_class = ProfileSerializer
+    serializer_class = ProfileListSerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
@@ -28,7 +28,7 @@ class BusinessProfileListView(generics.ListAPIView):
 
 class CustomerProfileListView(generics.ListAPIView):
     """List of all customer profiles."""
-    serializer_class = ProfileSerializer
+    serializer_class = ProfileListSerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):

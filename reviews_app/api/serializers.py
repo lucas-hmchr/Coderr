@@ -1,11 +1,12 @@
 from rest_framework import serializers
 
-from reviews_app.models import Review
 from profiles_app.models import UserProfile
+from reviews_app.models import Review
 
 
 class ReviewSerializer(serializers.ModelSerializer):
     """Serializer for displaying reviews."""
+
     class Meta:
         model = Review
         fields = [
@@ -61,9 +62,37 @@ class ReviewCreateSerializer(serializers.ModelSerializer):
 
 
 class ReviewUpdateSerializer(serializers.ModelSerializer):
+    ALLOWED_UPDATE_FIELDS = {"rating", "description"}
+
     class Meta:
         model = Review
         fields = [
+            "id",
+            "business_user",
+            "reviewer",
             "rating",
-            "description"
+            "description",
+            "created_at",
+            "updated_at",
         ]
+        read_only_fields = [
+            "id",
+            "business_user",
+            "reviewer",
+            "created_at",
+            "updated_at",
+        ]
+
+    def validate(self, attrs):
+        invalid_fields = set(self.initial_data.keys()) - self.ALLOWED_UPDATE_FIELDS
+
+        if invalid_fields:
+            raise serializers.ValidationError(
+                {
+                    "detail": (
+                        "Only rating and description can be updated."
+                    )
+                }
+            )
+
+        return attrs

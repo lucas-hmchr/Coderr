@@ -20,10 +20,10 @@ class OfferListTests(OfferTestMixin, APITestCase):
         self.assertIn("results", response.data)
         self.assertEqual(response.data["count"], 1)
 
-    def test_anonymous_user_cannot_list_offers(self):
+    def test_anonymous_user_can_list_offers(self):
         response = self.client.get(self.offers_url())
 
-        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_offer_list_contains_expected_offer_fields(self):
         self.client.force_authenticate(user=self.customer)
