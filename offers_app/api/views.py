@@ -1,21 +1,25 @@
+from decimal import Decimal, InvalidOperation
+
 from django.db.models import Min
 from rest_framework import filters, generics, viewsets
-from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.exceptions import ValidationError
+from rest_framework.permissions import AllowAny, IsAuthenticated
 
 from offers_app.models import Offer, OfferDetail
 
+from .pagination import OfferPagination
 from .permissions import IsBusinessUserOrReadOnly, IsOfferOwnerOrReadOnly
 from .serializers import (
     OfferDetailRetrieveSerializer,
     OfferListSerializer,
+    OfferRetrieveSerializer,
     OfferSerializer,
-    OfferRetrieveSerializer
 )
-from .pagination import OfferPagination
 
 
 class OfferViewSet(viewsets.ModelViewSet):
     """ViewSet for managing offers."""
+
     permission_classes = [
         IsAuthenticated,
         IsBusinessUserOrReadOnly,
@@ -36,8 +40,9 @@ class OfferViewSet(viewsets.ModelViewSet):
     pagination_class = OfferPagination
 
     def get_permissions(self):
-        if self.action in ["list"]:
+        if self.action == "list":
             return [AllowAny()]
+
         return [permission() for permission in self.permission_classes]
 
     def get_queryset(self):
@@ -63,6 +68,10 @@ class OfferViewSet(viewsets.ModelViewSet):
         creator_id = self.request.query_params.get("creator_id")
 
         if creator_id:
+            creator_id = self.validate_positive_integer(
+                value=creator_id,
+                field_name="creator_id",
+            )
             return queryset.filter(user_id=creator_id)
 
         return queryset
@@ -72,6 +81,10 @@ class OfferViewSet(viewsets.ModelViewSet):
         min_price = self.request.query_params.get("min_price")
 
         if min_price:
+            min_price = self.validate_decimal(
+                value=min_price,
+                field_name="min_price",
+            )
             return queryset.filter(min_price__gte=min_price)
 
         return queryset
@@ -81,13 +94,47 @@ class OfferViewSet(viewsets.ModelViewSet):
         max_delivery_time = self.request.query_params.get("max_delivery_time")
 
         if max_delivery_time:
+            max_delivery_time = self.validate_positive_integer(
+                value=max_delivery_time,
+                field_name="max_delivery_time",
+            )
             return queryset.filter(min_delivery_time__lte=max_delivery_time)
 
         return queryset
 
+    def validate_positive_integer(self, value, field_name):
+        try:
+            value = int(value)
+        except (TypeError, ValueError) as error:
+            raise ValidationError(
+                {field_name: "Must be a valid integer."}
+            ) from error
+
+        if value < 0:
+            raise ValidationError(
+                {field_name: "Must be greater than or equal to 0."}
+            )
+
+        return value
+
+    def validate_decimal(self, value, field_name):
+        try:
+            value = Decimal(value)
+        except (InvalidOperation, TypeError) as error:
+            raise ValidationError(
+                {field_name: "Must be a valid number."}
+            ) from error
+
+        if value < 0:
+            raise ValidationError(
+                {field_name: "Must be greater than or equal to 0."}
+            )
+
+        return value
+
     def get_serializer_class(self):
         """Selects serializer based on action."""
-        if self.action in ["list"]:
+        if self.action == "list":
             return OfferListSerializer
 
         if self.action == "retrieve":
@@ -98,6 +145,7 @@ class OfferViewSet(viewsets.ModelViewSet):
 
 class OfferDetailRetrieveView(generics.RetrieveAPIView):
     """Detail view for a single offer detail."""
+
     queryset = OfferDetail.objects.all()
     serializer_class = OfferDetailRetrieveSerializer
     permission_classes = [IsAuthenticated]
